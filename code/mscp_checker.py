@@ -1,6 +1,9 @@
 """
 This script is used to perform random generation and testing of instances of the
 Minimum Set Coverage Problem (MSCP).
+
+Throughout this script, tasks are indexed from 0, i.e. if there are x tasks, the
+tasks are numbered {0, 1, ..., x-1}.
 """
 
 import itertools
@@ -23,11 +26,13 @@ class Config(object):
 
 
 def get_constraint_rows(num_tasks, num_subsets, subsets):
-    """This function generates the constraint matrix as a list of lists
-    based on the given number of tasks, and the subsets.
-    Given the subsets, the constraint matrix columns are set up as:
-    z_0 z_1 ... z_n x_0 x_1 ... x_n
-    where z_i are subset variables and x_i are task variables.
+    """This function generates the constraint matrix as a list of lists based on the given number of
+    tasks, and the subsets. Given the subsets, the constraint matrix columns are set up in the
+    following order:
+
+        z_0 z_1 ... z_n x_0 x_1 ... x_n.
+
+    Here, z_i are subset variables and x_j are task variables.
     The constraints are z_i <= x_j, (sum of z_i) >= k.
     The matrix is set up to write the constraints as Ax <= b."""
     num_columns = num_subsets + num_tasks
@@ -100,7 +105,7 @@ class ProblemInstance(object):
 
 
 class ModularityChecker(object):
-    def __init__(self, constraint_rows, check_every_minor):
+    def __init__(self, num_subsets, constraint_rows, check_every_minor):
         self.matrix = np.asarray(constraint_rows)
         self.check_every_minor = check_every_minor
         self.bimodular = True
@@ -119,14 +124,17 @@ class ModularityChecker(object):
         self.row_indices = list(range(self.num_rows - 1))
 
         self.max_minor_size = min(self.num_rows, self.num_cols)
+        self._max_num_minor_vals = (2 * num_subsets + 1)  # reason: abs(any minor val)<=num-subsets
         self.minor_vals = set([])
 
     def all_minors_valid(self, minor_size):
         logging.info("checking minors of size {}".format(minor_size))
         is_valid = True
-        for col_tup in itertools.combinations(self.col_indices, minor_size):
+        col_choices = itertools.combinations(self.col_indices, minor_size)
+        row_choices = itertools.combinations(self.row_indices, minor_size - 1)
+        for col_tup in col_choices:
             cols = self.matrix[:, list(col_tup)]
-            for row_tup in itertools.combinations(self.row_indices, minor_size - 1):
+            for row_tup in row_choices:
                 row_tup += (self.num_rows - 1,)
                 reduced_matrix = np.asarray([cols[i] for i in list(row_tup)])
                 det = int(round(np.linalg.det(reduced_matrix), 0))
@@ -143,6 +151,37 @@ class ModularityChecker(object):
                         is_valid = False
 
         return is_valid
+
+    def compute_minor_values(self):
+        for i in range(2, self.max_minor_size+1):
+            all_minor_vals_computed = self._compute_minor_values_at_rank(i)
+            if all_minor_vals_computed:
+                break
+
+        minor_val_list = list(self.minor_vals)
+        minor_val_list.sort()
+        logging.info("Minor values: {}".format(minor_val_list))
+
+    def _compute_minor_values_at_rank(self, rank):
+        col_choices = itertools.combinations(self.col_indices, rank)
+        row_choices = itertools.combinations(self.row_indices, rank - 1)
+
+        for col_tup in col_choices:
+            cols = self.matrix[:, list(col_tup)]
+            for row_tup in row_choices:
+                row_tup += (self.num_rows - 1,)
+                reduced_matrix = np.asarray([cols[i] for i in list(row_tup)])
+                det = int(round(np.linalg.det(reduced_matrix), 0))
+                if det not in self.minor_vals:
+                    logging.info('new minor value: {}'.format(det))
+                    logging.info('row indices of minor: {}'.format(row_tup))
+                    logging.info('col indices of minor: {}'.format(col_tup))
+                    logging.info('minor:\n{}'.format(reduced_matrix))
+                    self.minor_vals.add(det)
+                    if len(self.minor_vals) >= self._max_num_minor_vals:
+                        return True
+
+        return False
 
     def check(self):
         for i in range(2, self.max_minor_size+1):
@@ -161,7 +200,8 @@ class ModularityChecker(object):
 def check_modularity(problem_instance, check_every_minor):
     problem_instance.log_data()
     problem_instance.log_rows()
-    bc = ModularityChecker(problem_instance.constraint_rows, check_every_minor)
+    bc = ModularityChecker(problem_instance.num_subsets, problem_instance.constraint_rows,
+        check_every_minor)
     bc.check()
     bc.log_results()
 
@@ -200,10 +240,13 @@ def main():
     # logger.disabled=True
 
     try:
-        # alternative 1: generate a random instance and check bimodularity.
+        # Alternative 1: generate a random instance and check bimodularity.
         # pi = ProblemInstance.from_parameters(5, 4, 3)
 
-        # alternative 2: give a specific list of subsets and check bimodularity for it.
+        # Alternative 2: give a specific list of subsets and check bimodularity for it.
+        # Note: the following MSCP instance is a good example with 5 tasks and 4 subsets.
+        # The minimum and maximum minor values are -4 and 4. For every integer z in [-4, 4], there
+        # exists a minor of the constraint matrix of this instance whose determinant equals z.
         subsets = [
             [0, 1, 2,],
             [2, 3, 4,],
@@ -211,8 +254,14 @@ def main():
             [0, 1, 3, 4],]
         pi = ProblemInstance.from_subsets(subsets)
 
-        check_every_minor = False
-        check_modularity(pi, check_every_minor)
+        # check_every_minor = False
+        # check_modularity(pi, check_every_minor)
+
+        # Alternative 3: compute all minor values for a given problem instance
+        pi.log_data()
+        pi.log_rows()
+        mc = ModularityChecker(pi.num_subsets, pi.constraint_rows, False)
+        mc.compute_minor_values()
 
     except ScriptException as se:
         logging.error('Script exception: {}'.format(se.args[0]))
