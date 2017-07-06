@@ -1,3 +1,8 @@
+"""
+This script is used to perform random generation and testing of instances of the
+Minimum Set Coverage Problem (MSCP).
+"""
+
 import itertools
 import logging
 import math
@@ -7,20 +12,24 @@ import sys
 
 
 class ScriptException(Exception):
+    """Custom exception class for this script."""
     def __init__(self, value): self.value = value
     def __repr__(self): return repr(self.value)
 
 
 class Config(object):
+    """Class that holds global data."""
     EPS = 1e-6
 
 
 def get_constraint_rows(num_tasks, num_subsets, subsets):
-    # Given the subsets, the constraint matrix columns are set up as:
-    # z_0 z_1 ... z_n x_0 x_1 ... x_n
-    # where z_i are subset variables and x_i are task variables.
-    # The constraints are z_i <= x_j, (sum of z_i) >= k.
-    # The matrix is set up to write the constraints as Ax <= b.
+    """This function generates the constraint matrix as a list of lists
+    based on the given number of tasks, and the subsets.
+    Given the subsets, the constraint matrix columns are set up as:
+    z_0 z_1 ... z_n x_0 x_1 ... x_n
+    where z_i are subset variables and x_i are task variables.
+    The constraints are z_i <= x_j, (sum of z_i) >= k.
+    The matrix is set up to write the constraints as Ax <= b."""
     num_columns = num_subsets + num_tasks
     rows = list()
     for i, subset in enumerate(subsets):
@@ -36,13 +45,14 @@ def get_constraint_rows(num_tasks, num_subsets, subsets):
 
 
 class ProblemInstance(object):
+    """Class used to build and store random MSCP instances."""
     def __init__(self):
         self.num_tasks, self.num_subsets, self.num_subsets_to_select = None, None, None
         self.subsets, self.num_columns, self.constraint_rows = None, None, None
 
     @classmethod
     def from_parameters(cls, num_tasks, num_subsets, num_subsets_to_select):
-        """constructor that randomly generates an instance with the given parameters."""
+        """Constructor that randomly generates an instance with the given parameters."""
         pi = cls()
         pi.num_tasks = num_tasks
         pi.num_subsets = num_subsets
@@ -54,7 +64,7 @@ class ProblemInstance(object):
 
     @classmethod
     def from_subsets(cls, subsets):
-        """constructor that builds a constraint matrix based on the given subsets."""
+        """Constructor that builds a constraint matrix based on the given subsets."""
         pi = cls()
         pi.subsets = subsets
         pi.num_subsets = len(pi.subsets)
@@ -67,13 +77,6 @@ class ProblemInstance(object):
         return 'ProblemInstance({}, {}, {})'.format(self.num_tasks, self.num_subsets,
             self.num_subsets_to_select)
 
-    def log_data(self):
-        logging.info('#tasks: {}, #subsets: {}, #select: {}'.format(self.num_tasks,
-            self.num_subsets, self.num_subsets_to_select))
-        logging.info('subsets')
-        for ss in self.subsets:
-            logging.info(ss)
-
     @staticmethod
     def _get_randomly_generated_subsets(num_tasks, num_subsets):
         tasks = list(range(num_tasks))
@@ -82,6 +85,13 @@ class ProblemInstance(object):
             subset_len = random.randint(1, num_tasks)
             subsets.append(sorted(random.sample(tasks, subset_len)))
         return subsets
+
+    def log_data(self):
+        logging.info('#tasks: {}, #subsets: {}, #select: {}'.format(self.num_tasks,
+            self.num_subsets, self.num_subsets_to_select))
+        logging.info('subsets')
+        for ss in self.subsets:
+            logging.info(ss)
 
     def log_rows(self):
         logging.info('rows of constraint matrix.')
@@ -109,8 +119,7 @@ class BimodularityChecker(object):
         self.row_indices = list(range(self.num_rows - 1))
 
         self.max_minor_size = min(self.num_rows, self.num_cols)
-        self.max_minor_val = -math.inf
-        self.min_minor_val = math.inf
+        self.minor_vals = set([])
 
     def all_minors_valid(self, minor_size):
         logging.info("checking minors of size {}".format(minor_size))
@@ -121,10 +130,7 @@ class BimodularityChecker(object):
                 row_tup += (self.num_rows - 1,)
                 reduced_matrix = np.asarray([cols[i] for i in list(row_tup)])
                 det = int(round(np.linalg.det(reduced_matrix), 0))
-                if det < self.min_minor_val:
-                    self.min_minor_val = det
-                if det > self.max_minor_val:
-                    self.max_minor_val = det
+                self.minor_vals.add(det)
                 if abs(det) > 2:
                     logging.info('row indices of invalid minor: {}'.format(row_tup))
                     logging.info('column indices of invalid minor: {}'.format(col_tup))
@@ -145,10 +151,11 @@ class BimodularityChecker(object):
                 if not self.check_every_minor:
                     break
 
-    def print_results(self):
+    def log_results(self):
         logging.info("Matrix is bi-modular: {}".format(self.bimodular))
-        logging.info("Minimum minor value: {}".format(self.min_minor_val))
-        logging.info("Maximum minor value: {}".format(self.max_minor_val))
+        minor_val_list = list(self.minor_vals)
+        minor_val_list.sort()
+        logging.info("Minor values: {}".format(minor_val_list))
 
 
 def check_bimodularity(problem_instance, check_every_minor):
@@ -156,7 +163,7 @@ def check_bimodularity(problem_instance, check_every_minor):
     problem_instance.log_rows()
     bc = BimodularityChecker(problem_instance.constraint_rows, check_every_minor)
     bc.check()
-    bc.print_results()
+    bc.log_results()
 
 
 def bimodularity_check_batch_run():
