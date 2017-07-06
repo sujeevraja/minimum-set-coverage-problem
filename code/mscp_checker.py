@@ -99,7 +99,7 @@ class ProblemInstance(object):
             logging.info(row)
 
 
-class BimodularityChecker(object):
+class ModularityChecker(object):
     def __init__(self, constraint_rows, check_every_minor):
         self.matrix = np.asarray(constraint_rows)
         self.check_every_minor = check_every_minor
@@ -115,7 +115,7 @@ class BimodularityChecker(object):
 
         self.col_indices = list(range(self.num_cols))
 
-        # we only want to check minors tht include the last row
+        # we only want to check minors that include the last row
         self.row_indices = list(range(self.num_rows - 1))
 
         self.max_minor_size = min(self.num_rows, self.num_cols)
@@ -158,10 +158,10 @@ class BimodularityChecker(object):
         logging.info("Minor values: {}".format(minor_val_list))
 
 
-def check_bimodularity(problem_instance, check_every_minor):
+def check_modularity(problem_instance, check_every_minor):
     problem_instance.log_data()
     problem_instance.log_rows()
-    bc = BimodularityChecker(problem_instance.constraint_rows, check_every_minor)
+    bc = ModularityChecker(problem_instance.constraint_rows, check_every_minor)
     bc.check()
     bc.log_results()
 
@@ -178,7 +178,7 @@ def bimodularity_check_batch_run():
             for _ in range(10):
                 logging.info('instance number: {}'.format(instance_num))
                 pi = ProblemInstance(num_tasks, num_subsets, num_subsets_to_select)
-                check_bimodularity(pi)
+                check_modularity(pi)
                 logging.info('----------------------------------------------------')
                 print('completed instance number {} with m={}, n={}, k={}'.format(
                     instance_num, num_tasks, num_subsets, num_subsets_to_select))
@@ -212,7 +212,7 @@ def main():
         pi = ProblemInstance.from_subsets(subsets)
 
         check_every_minor = False
-        check_bimodularity(pi, check_every_minor)
+        check_modularity(pi, check_every_minor)
 
     except ScriptException as se:
         logging.error('Script exception: {}'.format(se.args[0]))
