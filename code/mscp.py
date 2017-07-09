@@ -20,11 +20,6 @@ class ScriptException(Exception):
     def __repr__(self): return repr(self.value)
 
 
-class Config(object):
-    """Class that holds global data."""
-    EPS = 1e-6
-
-
 def get_constraint_rows(num_tasks, num_subsets, subsets):
     """This function generates the constraint matrix as a list of lists based on the given number of
     tasks, and the subsets. Given the subsets, the constraint matrix columns are set up in the
@@ -105,10 +100,8 @@ class ProblemInstance(object):
 
 
 class ModularityChecker(object):
-    def __init__(self, num_subsets, constraint_rows, check_every_minor):
+    def __init__(self, num_subsets, constraint_rows):
         self.matrix = np.asarray(constraint_rows)
-        self.check_every_minor = check_every_minor
-        self.bimodular = True
 
         self.num_rows = len(constraint_rows)
         if self.num_rows == 0:
@@ -120,37 +113,15 @@ class ModularityChecker(object):
 
         self.col_indices = list(range(self.num_cols))
 
-        # we only want to check minors that include the last row
+        # We only want to check minors that include the last row.
+        # The reason behind this is that if a minor is built without any elment from the last row,
+        # we know for sure that this minor's value is one of {-1, 0, 1}. Further details on why
+        # this is true is available in the report.
         self.row_indices = list(range(self.num_rows - 1))
 
+        self.minor_vals = set([])
         self.max_minor_size = min(self.num_rows, self.num_cols)
         self._max_num_minor_vals = (2 * num_subsets + 1)  # reason: abs(any minor val)<=num-subsets
-        self.minor_vals = set([])
-
-    def all_minors_valid(self, minor_size):
-        logging.info("checking minors of size {}".format(minor_size))
-        is_valid = True
-        col_choices = itertools.combinations(self.col_indices, minor_size)
-        row_choices = itertools.combinations(self.row_indices, minor_size - 1)
-        for col_tup in col_choices:
-            cols = self.matrix[:, list(col_tup)]
-            for row_tup in row_choices:
-                row_tup += (self.num_rows - 1,)
-                reduced_matrix = np.asarray([cols[i] for i in list(row_tup)])
-                det = int(round(np.linalg.det(reduced_matrix), 0))
-                self.minor_vals.add(det)
-                if abs(det) > 2:
-                    logging.info('row indices of invalid minor: {}'.format(row_tup))
-                    logging.info('column indices of invalid minor: {}'.format(col_tup))
-                    logging.info('determinant: {}'.format(det))
-                    logging.info('minor')
-                    logging.info(reduced_matrix)
-                    if not self.check_every_minor:
-                        return False
-                    else:
-                        is_valid = False
-
-        return is_valid
 
     def compute_minor_values(self):
         for i in range(2, self.max_minor_size+1):
@@ -183,49 +154,6 @@ class ModularityChecker(object):
 
         return False
 
-    def check(self):
-        for i in range(2, self.max_minor_size+1):
-            if not self.all_minors_valid(i):
-                self.bimodular = False
-                if not self.check_every_minor:
-                    break
-
-    def log_results(self):
-        logging.info("Matrix is bi-modular: {}".format(self.bimodular))
-        minor_val_list = list(self.minor_vals)
-        minor_val_list.sort()
-        logging.info("Minor values: {}".format(minor_val_list))
-
-
-def check_modularity(problem_instance, check_every_minor):
-    problem_instance.log_data()
-    problem_instance.log_rows()
-    bc = ModularityChecker(problem_instance.num_subsets, problem_instance.constraint_rows,
-        check_every_minor)
-    bc.check()
-    bc.log_results()
-
-
-def bimodularity_check_batch_run():
-    instance_num = 0
-
-    # The number of subsets to select doesn't really matter for this script as we are only
-    # interested in constraint coefficients. So, we will leave this fixed.
-    num_subsets_to_select = 2
-
-    for num_tasks in range(5, 16):
-        for num_subsets in range(5, 20):
-            for _ in range(10):
-                logging.info('instance number: {}'.format(instance_num))
-                pi = ProblemInstance(num_tasks, num_subsets, num_subsets_to_select)
-                check_modularity(pi)
-                logging.info('----------------------------------------------------')
-                print('completed instance number {} with m={}, n={}, k={}'.format(
-                    instance_num, num_tasks, num_subsets, num_subsets_to_select))
-                instance_num += 1
-
-    print('testing completed.')
-
 
 def main():
     # logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
@@ -240,10 +168,10 @@ def main():
     # logger.disabled=True
 
     try:
-        # Alternative 1: generate a random instance and check bimodularity.
+        # Alternative 1: generate a random instance and check modularity.
         # pi = ProblemInstance.from_parameters(5, 4, 3)
 
-        # Alternative 2: give a specific list of subsets and check bimodularity for it.
+        # Alternative 2: give a specific list of subsets and check modularity for it.
         # Note: the following MSCP instance is a good example with 5 tasks and 4 subsets.
         # The minimum and maximum minor values are -4 and 4. For every integer z in [-4, 4], there
         # exists a minor of the constraint matrix of this instance whose determinant equals z.
@@ -254,13 +182,10 @@ def main():
             [0, 1, 3, 4],]
         pi = ProblemInstance.from_subsets(subsets)
 
-        # check_every_minor = False
-        # check_modularity(pi, check_every_minor)
-
         # Alternative 3: compute all minor values for a given problem instance
         pi.log_data()
         pi.log_rows()
-        mc = ModularityChecker(pi.num_subsets, pi.constraint_rows, False)
+        mc = ModularityChecker(pi.num_subsets, pi.constraint_rows)
         mc.compute_minor_values()
 
     except ScriptException as se:
