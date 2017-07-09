@@ -25,6 +25,31 @@ This script has the following functionality built in:
 
 The python code has been tested with Python 3.6.1 on Windows 7 and Linux (Ubuntu). It requires the numpy package. To install this package on Linux, it may be simplest to follow the `pip install` [instructions](https://www.scipy.org/install.html) for the entire [Scipy](https://www.scipy.org) collection. Installation for Windows seems to be a bit more difficult. As long as the `import numpy` statement works, the script should work as well. The `main()` function offers examples on how to use the script.
 
+### code/cpp
+
+#### Functionality
+
+This folder contains cpp files that can be used to generate random MSCP instances and solve them using open source MIP solvers. It has been tested with gcc 6.3.0 on Cygwin and Ubuntu 16.04.
+
+#### Dependencies
+
+- [Cbc](https://projects.coin-or.org/Cbc), an open source MIP solver that is part of the [COIN-OR](https://www.coin-or.org) package.
+- [Boost](http://www.boost.org) C++ libraries.
+
+#### Usage
+
+- Build Cbc from source using the instructions in the "Quick Start Guide for Unix-like Environments" section on the [Cbc page](https://projects.coin-or.org/Cbc) in a folder like `~/coin/Cbc-x.x.x`.
+- Download and extract boost source files to a folder, say `~/boost_x_xx_x`.
+- Open the terminal, `cd` to the `code/cpp` folder of this repository and open the Makefile in this folder.
+- Change the values of `CBCDIR` and `BOOSTDIR` to point to the Cbc and Boost folders respectively.
+- Close the Makefile and run `make`. This will generate the executable `main.out`.
+- Running `main.out` will:
+    - generate a random MSCP instance and writes a file with details about this instance in the data folder.
+    - write a MPS file named `model.mps`.
+    - solve the model with Cbc and prints the problem and solution to the console.
+- `make clean` does the usual (cleans up the exe, object and dependency files).
+- `make deepclean` removes _all_ txt files from the data folder as well.
+
 ## Results
 
-This folders contains [Latex](https://www.latex-project.org/) source files of a document that is a compilation of results and references related to the problem collected so far.
+This folder contains [Latex](https://www.latex-project.org/) source files of a document that is a compilation of results and references related to the problem collected so far.
