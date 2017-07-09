@@ -1,23 +1,30 @@
 # minimum-set-coverage-problem
-Contains documents and code related to research on the Minimum Set Coverage Problem (MSCP).
+
+This repository contains documents and code related to research on the Minimum Set Coverage Problem (MSCP). In MSCP, we are given m tasks and n subsets of these tasks. We would like to select at least k subsets such that the number of tasks in their union is minimized.
 
 ## Code
 
-### check_bimodularity.py
+### code/mscp.py
 
-This is a hacky python script to do a brute-force search to identify a constraint matrix of the minimum set coverage problem that is not bimodular. The python code has been used with Python 3.6.1 and requires numpy. It may be simplest to follow the `pip install` [instructions](https://www.scipy.org/install.html) on Linux for the entire [Scipy](https://www.scipy.org) collection.
+#### Functionality
 
+The purpose of this script is to study constraint matrices of MSCP instances. It has already been used to verify the following properties of the MSCP constraint matrix:
 
-In the minimum set coverage problem, we are given m tasks and n subsets of these tasks.
-We would like to select at least k subsets such that the number of tasks in their union is
-minimized.
+- The matrix is not bi-modular.
+- If we remove the lower-bound constraint on the number of subsets to select, the matrix is totally uni-modular.
+- The absolute value of any minor of the constraint matrix is bounded by the number of subsets.
+- There exists at least one non-trivial problem instance such that given the number of subsets n, for every value v in {-n, -n+1, ..., 0, ..., n}, there exists a minor whose determinant is v.
 
-Bimodular matrices are matrices in which every k-minor has a value in [-2, 2]. A k minor of
-of a matrix is the intersection of any k rows and k columns.
+This script has the following functionality built in:
 
-The goal is as follows:
+- generating constraint matrix of a random MSCP instance from a given number of tasks and a given number of subsets.
+- generating constraint matrix from a specific number of subsets
+- computing all unique minor values of a MSCP constraint matrix.
 
-- We know that if a constraint matrix is bimodular, the problem can be solved in strongly polynomial time.
-- If we can't come up with a matrix that is not bimodular, a theoretical proof may needed to prove bimodularity. Then, no more work is needed on this problem as it can be solved quickly.
-- If we can come up with one, then the problem merits further research.
-- Current conclusion: the problem is n-modular where n is the number of subsets and does not depend on m or k at all. This bound of n is tight and has been verified computationally with this script.
+#### Usage
+
+The python code has been tested with Python 3.6.1 on Windows 7 and Linux (Ubuntu). It requires the numpy package. To install this package on Linux, it may be simplest to follow the `pip install` [instructions](https://www.scipy.org/install.html) for the entire [Scipy](https://www.scipy.org) collection. Installation for Windows seems to be a bit more difficult. As long as the `import numpy` statement works, the script should work as well. The `main()` function offers examples on how to use the script.
+
+## Results
+
+This folders contains [Latex](https://www.latex-project.org/) source files of a document that is a compilation of results and references related to the problem collected so far.
