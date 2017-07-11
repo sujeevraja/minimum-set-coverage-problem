@@ -116,7 +116,7 @@ clean:
 
 deepclean:
 	make clean
-	rm -rf data/*.txt *.mps *.lp
+	rm -rf data/*.txt data/*.mps *.lp
 
 .cpp.o:
 	$(CXX) $(CXXFLAGS) $(INCL) -c -o $@ `test -f '$<' || echo '$(SRCDIR)/'`$<

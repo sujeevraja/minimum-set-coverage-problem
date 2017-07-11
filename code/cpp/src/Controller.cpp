@@ -6,11 +6,13 @@
 #include "Solver.hpp"
 #include "Utility.hpp"
 
+Controller::Controller() {}
+Controller::~Controller() {}
+
 void Controller::generateInstance(int numTasks, int numSubsets, int numSubsetsToSelect) {
     _problemInstance = ProbUPtr(new ProblemInstance(numTasks, numSubsets, numSubsetsToSelect));
     _instanceName = _problemInstance->getName();
 
-    _problemInstance->print();
     const std::string folderName = "data";
     if (util::folderExists(folderName))
     {
@@ -24,8 +26,8 @@ void Controller::generateInstance(int numTasks, int numSubsets, int numSubsetsTo
     }
 }
 
-void Controller::solveInstance() {
-    Solver solver;
+void Controller::initSolverWithProblemData() {
+    _solver = std::unique_ptr<Solver>(new Solver{});
 
     // add task variables.
     const int numTasks = _problemInstance->getNumTasks();
@@ -33,7 +35,7 @@ void Controller::solveInstance() {
         std::stringstream oss;
         oss << "task_" << i;
         const std::string colName = oss.str();
-        solver.addColumn(i, 0.0, 1.0, 1.0, &colName);
+        _solver->addColumn(i, 0.0, 1.0, 1.0, &colName);
     }
 
     // add subset variables.
@@ -42,13 +44,13 @@ void Controller::solveInstance() {
         std::stringstream oss;
         oss << "subset_" << i;
         const std::string colName = oss.str();
-        solver.addColumn(numTasks + i, 0.0, 1.0, 0.0, &colName);
+        _solver->addColumn(numTasks + i, 0.0, 1.0, 0.0, &colName);
     }
 
     // mark all variables as integer.
     const int numCols = numTasks + numSubsets;
     for(int i = 0; i < numCols; ++i)
-        solver.markColAsInteger(i);
+        _solver->markColAsInteger(i);
 
     // add VUB constraints.
     std::vector<double> rowCoefs({1.0, -1.0});
@@ -60,7 +62,7 @@ void Controller::solveInstance() {
             for(const int taskIndex : subset) {
                 rowIndices[0] = numTasks + i;
                 rowIndices[1] = taskIndex;
-                solver.addRow(rowIndices, rowCoefs, boost::none, 0.0);
+                _solver->addRow(rowIndices, rowCoefs, boost::none, 0.0);
             }
         }
     }
@@ -71,9 +73,5 @@ void Controller::solveInstance() {
     rowCoefs.resize(numSubsets, 1.0);
     rowIndices.resize(numSubsets);
     std::iota(rowIndices.begin(), rowIndices.end(), numTasks);
-    solver.addRow(rowIndices, rowCoefs, numSubsetsToSelect, boost::none);
-
-    // solve model
-    // solver.printModelData();
-    solver.solveWithCbc();
+    _solver->addRow(rowIndices, rowCoefs, numSubsetsToSelect, boost::none);
 }
