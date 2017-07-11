@@ -41,13 +41,20 @@
 
 \subheading{Introduction}\\
 
-In the Minimum Set Coverage Problem (MSCP), we are given $m$ tasks and $n$ non-empty subsets of these tasks. The objective is to select exactly $k$ of these $n$ subsets such that the number of tasks in the union is minimized. Note that the problem is trivial if all sets are disjoint. This problem seems to be investigated in great depth in \cite{Vinterbo2007}, where the $NP$-hardness of this problem is proven by reducing it to an instance of the Maximum Balanced Complete Bipartite Subgraph (MBCBS) problem. Due to \cite{SubhashKhot2006}, MBCBS has been proven to be $NP$-hard and admits no PTAS. So, MSCP is NP-hard (not totally sure).\\
+In the Minimum Set Coverage (MSC) problem, we are given $m$ tasks and $n$ non-empty subsets of these tasks. The objective is to select exactly $k$ of these $n$ subsets such that the number of tasks in the union is minimized. \cite{Vinterbo2007} establishes the following about MSC:
+
+\begin{itemize}
+\item MSC is a special case of the Minimum Sub-additive Join problem.
+\item MSC can be reduced in polynomial time to the Maximum Balanced Complete Bipartite Subgraph (MBCBS) problem.
+\item MBCBS is $NP$-hard and admits no PTAS \cite{SubhashKhot2006}.
+\item So, MSC is $NP$-hard and admits no PTAS.
+\end{itemize}
 
 For convenience, we assume that every subset is non-empty (otherwise it can be ignored) and that every task is in at least one subset (otherwise it can be removed from the list of tasks). We also assume that $k < n$ to make the problem non-trivial.\\
 
 \subheading{MIP Formulation}\\
 
-Next, we present a mixed integer linear programming formulation of MSCP.\\
+Next, we present a mixed integer linear programming formulation of MSC.\\
 
 \textit{Notation}:
 \begin{itemize}
@@ -75,15 +82,11 @@ The structure of the constraint matrix has some interesting properties. First, n
 
 If we consider the constraint matrix including this constraint, the row with this constraint will be a sequence of $-1$ values followed by a sequence of $0$ values. The number of $-1$ values in this row is the number of subsets in the problem. Hence, any minor constructed using values in this row cannot have a value that falls below $-k$ or exceeds $k$. We can construct examples to show that these bounds are tight. We can also construct examples to show that for a given $k$, there exist problem instances whose values are any of the integers $\{-k, -k+1, ..., 0, 1, ..., k\}$ (examples to be added later).\\
 
-Some results relevant to matrices with a structure similar to this problem can be found in \cite{gribanov2013integer}, \cite{gribanov2015integer}, \cite{kotnyek2002generalization}. However, it seems that MSCP is slightly more general than the classes of problems addressed in these publications. Also, Rico Zenklusen shared the following private communication: he has co-authored a publication that show that  any ILP with a 2-modular constraint matrix can be solved in strongly polynomial time. However, it is open whether ILPs with a k-modular constraint matrix, for some fixed $k \geq 3$, can be solved efficiently.\\
+Some results relevant to matrices with a structure similar to this problem can be found in \cite{gribanov2013integer}, \cite{gribanov2015integer}, \cite{kotnyek2002generalization}. However, it seems that MSC is slightly more general than the classes of problems addressed in these publications. Also, Rico Zenklusen shared the following private communication: he has co-authored a publication that show that  any ILP with a 2-modular constraint matrix can be solved in strongly polynomial time. However, it is open whether ILPs with a k-modular constraint matrix, for some fixed $k \geq 3$, can be solved efficiently.\\
 
-Example for a minor with a determinant that is not a power of 2:\\
+Due to the hardness of MSC, there is no hope of using $k$-modularity results to solve the problem easily. We can only hope to exploit the boundedness of minors to In fact, we can use this relationship to say that there exist constraint matrices such that each of their minors have absolute determinant value of at most $k$, but the problem cannot be solved in polynomial time.\\
 
-Number of tasks: 5, Number of subsets: 4
-
-subsets: $\{0, 1, 2\}$, $\{2, 3, 4\}$, $\{2, 4\}$, \{0, 1, 3, 4\}.
-
-Constraint matrix:\\
+Consider the instance with $5$ tasks numbered from $0$ to $5$ and $4$ subsets $\{0, 1, 2\}$, $\{2, 3, 4\}$, $\{2, 4\}$, \{0, 1, 3, 4\}. The constraint matrix is:\\
 
 $[1, 0, 0, 0, -1, 0, 0, 0, 0]$\\
 $[1, 0, 0, 0, 0, -1, 0, 0, 0]$\\
@@ -99,22 +102,7 @@ $[0, 0, 0, 1, 0, 0, 0, -1, 0]$\\
 $[0, 0, 0, 1, 0, 0, 0, 0, -1]$\\
 $[-1, -1, -1, -1, 0, 0, 0, 0, 0]$\\
 
-row indices of invalid minor: (2, 3, 6, 12)
-
-column indices of invalid minor: (0, 1, 2, 6)
-
-minor:
-
-$[[ 1,  0,  0, -1]$\\
-$ [ 0,  1,  0, -1]$\\
-$ [ 0,  0,  1, -1]$\\
-$ [-1, -1, -1,  0]]$\\
-
-Matrix is bi-modular: False
-
-Minimum minor value: -3
-
-Maximum minor value: 1\\
+For every integer $h$ in $\{-4, -3, ..., 3, 4\}$, the above matrix has a minor whose determinant has value $h$.\\
 
 \subheading{Polyhedral properties of the MIP solution space}\\
 
@@ -125,7 +113,7 @@ While we usually don't really desire a solution that selects more than $k$ subse
 \item If a subset $E_p$ contains a task not in any other subset in the solution, it can be dropped to reduce the objective and yield a better solution.
 \end{itemize}
 
-Hence, considering this relaxed version of the model will not yield a solution with a worse objective value than the one with a strict equality for the cardinality constraint. We use this model as it simplifies the polyhedral analysis of certain families of inequalities. There is also an indirect reason to consider this version. The randomized algorithm proposed in \cite{SvitkinaFleischer2011} seems to offer an efficient approximation algorithm for the minimization of a submodular function with a cardinality constraint. This algorithm only uses the cardinality constraint as a lower bound and not as a strict equality. It may be easier to relate MSCP with that paper with the inequality constraint, although this is only speculative.\\
+Hence, considering this relaxed version of the model will not yield a solution with a worse objective value than the one with a strict equality for the cardinality constraint. We use this model as it simplifies the polyhedral analysis of certain families of inequalities. There is also an indirect reason to consider this version. The randomized algorithm proposed in \cite{SvitkinaFleischer2011} seems to offer an efficient approximation algorithm for the minimization of a submodular function with a cardinality constraint. This algorithm only uses the cardinality constraint as a lower bound and not as a strict equality. It may be easier to relate MSC with that paper with the inequality constraint, although this is only speculative.\\
 
 Let $P$ denote the feasible region of the above MIP and $conv(P)$ its convex hull. For $j \in M$, let $A_j \subseteq N$ be the set of indices of $E_i$ sets that contain task $j$. Throughout the rest of the article, we write any point in $P$ in the order $(x_1,...,x_m,z_1,...,z_n)$. Minor note: the facets of $conv(P)$ for small instances were primarily identified using \cite{polymake}.\\
 
@@ -443,7 +431,7 @@ In other words, every point lying on \eqref{eq:vi1} also lies on another valid i
 
 Please check the appendix for some inequalities that relax the conditions of the above inequalities even further. But they do get much messier.\\
 
-\subheading{Alternative perspective on MSCP based on submodular functions}\\
+\subheading{Alternative perspective on MSC based on submodular functions}\\
 
 Given a finite set $\Omega$ and a function $f:2^{\Omega} \rightarrow \sr$ is said to be submodular if any of the following three equivalent conditions are satisfied:
 
