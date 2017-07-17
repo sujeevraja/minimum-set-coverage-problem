@@ -10,7 +10,7 @@ This repository contains documents and code related to research on the Minimum S
 
 The purpose of this script is to study constraint matrices of MSCP instances. It has already been used to verify the following properties of the MSCP constraint matrix:
 
-- The matrix is not bi-modular.
+- The matrix is not bi-modular in general.
 - If we remove the lower-bound constraint on the number of subsets to select, the matrix is totally uni-modular.
 - The absolute value of any minor of the constraint matrix is bounded by the number of subsets.
 - There exists at least one non-trivial problem instance such that given the number of subsets n, for every value v in {-n, -n+1, ..., 0, ..., n}, there exists a minor whose determinant is v.
@@ -23,7 +23,7 @@ This script has the following functionality built in:
 
 #### Usage
 
-The python code has been tested with Python 3.6.1 on Windows 7 and Linux (Ubuntu). It requires the numpy package. To install this package on Linux, it may be simplest to follow the `pip install` [instructions](https://www.scipy.org/install.html) for the entire [Scipy](https://www.scipy.org) collection. Installation for Windows seems to be a bit more difficult. As long as the `import numpy` statement works, the script should work as well. The `main()` function offers examples on how to use the script.
+The python code has been tested with Python 3.6.1 on Windows 7 and Linux (Ubuntu). It requires the [numpy](http://www.numpy.org/) package. Running `pip istall numpy` seems to suffice on Windows 7 (native, not Cygwin) and Linux (Ubuntu). The `main()` function offers examples on how to use the script.
 
 ### code/cpp
 
