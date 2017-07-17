@@ -8,7 +8,7 @@
 *.aux
 *.bbl
 *.blg
-*.synctex
+*.synctex*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
