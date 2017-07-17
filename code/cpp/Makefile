@@ -14,7 +14,7 @@
 USE_CBC = TRUE
 CBCDIR = $(HOME)/coin/Cbc-2.9.8
 
-BOOSTDIR = $(HOME)/boost_1_63_0
+BOOSTDIR = $(HOME)/boost_1_64_0
 
 # To compile other examples, either changed the following line, or
 # add the argument DRIVER=problem_name to make
