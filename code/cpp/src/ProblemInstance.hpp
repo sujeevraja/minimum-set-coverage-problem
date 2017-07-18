@@ -10,7 +10,7 @@ public:
     int getNumTasks() const { return _numTasks; }
     int getNumSubsets() const { return _numSubsets; }
     int getNumSubsetsToSelect() const { return _numSubsetsToSelect; }
-    void print() const;
+    void printSubsets() const;
     void writeToFile(const std::string& fileName) const;
     const std::vector<std::vector<int>>& getSubsets() const { return _subsets; }
     std::string getName() const;

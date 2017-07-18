@@ -67,11 +67,7 @@ void ProblemInstance::writeToFile(const std::string& fileName) const {
     fout.close();
 }
 
-void ProblemInstance::print() const {
-    std::cout << "Number of tasks (m): " << _numTasks << "\n";
-    std::cout << "Number of subsets (n): " << _numSubsets << "\n";
-    std::cout << "Number of subsets to select (k): " << _numSubsetsToSelect << "\n";
-
+void ProblemInstance::printSubsets() const {
     std::cout << "subsets:\n";
     for(const auto& currSubset : _subsets) {
         for(int index : currSubset)

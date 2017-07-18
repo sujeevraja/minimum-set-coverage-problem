@@ -5,6 +5,10 @@
 #include <vector>
 #include <boost/optional.hpp>
 
+#ifdef USE_CBC
+class CoinModel;
+#endif
+
  struct ColumnInfo {
      ColumnInfo(int i, boost::optional<double> l, boost::optional<double> u, double o, const std::string * namePtr)
      : index(i)
@@ -22,8 +26,8 @@
 
 class Solver {
 public:
-    Solver()
-        : _numCols(0) {}
+    Solver();
+    ~Solver();
 
     void addColumn(const int index, const boost::optional<double> lb, const boost::optional<double> ub,
         const double obj, const std::string * name = nullptr);
@@ -33,9 +37,13 @@ public:
     void addRow(const std::vector<int>& indices, const std::vector<double>& coefs,
         const boost::optional<double> lb, const boost::optional<double> ub);
 
-    void solveWithCbc();
+    void printConstraints() const;
 
-    void printModelData() const;
+#ifdef USE_CBC
+    void prepareDataForCbc();
+    void writeModel(const std::string& fileName) const;
+    void solveWithCbc();
+#endif
 
     const std::vector<double>& getSolution() const {
         return _solution;
@@ -50,6 +58,10 @@ private:
     std::vector<std::vector<double>> _rowCoefs;
     std::vector<std::pair<boost::optional<double>, boost::optional<double>>> _rowBounds;
     std::vector<double> _solution;
+
+#ifdef USE_CBC
+    CoinModel * _build;
+#endif
 };
 
 #endif
