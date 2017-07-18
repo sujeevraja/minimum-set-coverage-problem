@@ -14,6 +14,8 @@ namespace util {
     std::string getCurrentTimeStamp();
 
     bool folderExists(const std::string& dirName);
+
+    const double eps = 1e-6;
 }
 
 #endif

@@ -1,3 +1,4 @@
+#include <chrono>
 #include <iostream>
 #include <boost/optional/optional_io.hpp>
 #ifdef USE_CBC
@@ -7,6 +8,20 @@
 #endif
 #include "Solver.hpp"
 #include "Utility.hpp"
+
+Solver::Solver()
+    : _numCols(0)
+#ifdef USE_CBC
+    , _build(nullptr)
+#endif
+    {}
+
+Solver::~Solver() {
+#ifdef USE_CBC
+    if(_build != nullptr)
+        delete _build;
+#endif
+}
 
 void Solver::addColumn(const int index, const boost::optional<double> lb,
     const boost::optional<double> ub, const double obj, const std::string * name /* = nullptr */) {
@@ -25,26 +40,25 @@ void Solver::addRow(const std::vector<int>& indices, const std::vector<double>& 
     _rowBounds.emplace_back(lb, ub);
 }
 
-void Solver::solveWithCbc() {
 #ifdef USE_CBC
-    CoinModel build;
+void Solver::prepareDataForCbc() {
+    _build = new CoinModel();
 
     // add columns
     for(const auto& col : _columns) {
         const double lb = col.lb != boost::none ? col.lb.get() : -COIN_DBL_MAX;
         const double ub = col.ub != boost::none ? col.ub.get() : COIN_DBL_MAX;
-        build.setColumnBounds(col.index, lb, ub);
-        build.setObjective(col.index, col.obj);
+        _build->setColumnBounds(col.index, lb, ub);
+        _build->setObjective(col.index, col.obj);
         if(col.name != "")
-            build.setColumnName(col.index, col.name.c_str());
+            _build->setColumnName(col.index, col.name.c_str());
     }
 
     // mark columns as integer
     for(const int index : _integerColIndices)
-        build.setInteger(index);
+        _build->setInteger(index);
 
     // add rows to build
-    const size_t numRows = _rowIndices.size();
     for(size_t i = 0; i < _rowIndices.size(); ++i) {
         const int numNonZeroes = int(_rowIndices[i].size());
         const double lb = _rowBounds[i].first != boost::none
@@ -53,26 +67,36 @@ void Solver::solveWithCbc() {
         const double ub = _rowBounds[i].second != boost::none
             ? _rowBounds[i].second.get()
             : COIN_DBL_MAX;
-        build.addRow( numNonZeroes, _rowIndices[i].data(), _rowCoefs[i].data(), lb, ub);
+        _build->addRow( numNonZeroes, _rowIndices[i].data(), _rowCoefs[i].data(), lb, ub);
     }
+}
 
-    // // create solver and load data into solver
+void Solver::writeModel(const std::string& fileName) const {
+    if(_build != nullptr)
+        _build->writeMps(fileName.c_str());
+}
+
+void Solver::solveWithCbc() {
+    // create solver and load data into solver
     OsiSolverInterface * solver = new OsiClpSolverInterface();
-    solver->loadFromCoinModel(build);
-    build.writeMps("model.mps");
+    solver->loadFromCoinModel(*_build);
 
     CbcModel model(*solver);
     model.setLogLevel(0);
-    model.setMaximumSeconds(120.0);
+    model.setMaximumSeconds(300.0);
     // model.setMaximumNodes(5000);
 
     // solve model and print solution
+    const auto stTime = std::chrono::steady_clock::now();
     model.branchAndBound();
+    const auto enTime = std::chrono::steady_clock::now();
 
-    std::cout << "solved model.\n";
-    std::cout << "number of rows: " << numRows << "\n";
-    std::cout << "number of columns: " << model.getNumCols() << "\n";
-    std::cout << "status: ";
+    std::cout << "Solution time: ";
+    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(enTime - stTime).count();
+    std::cout << " milliseconds\n";
+    std::cout << "Number of rows: " << model.getNumRows() << "\n";
+    std::cout << "Number of columns: " << model.getNumCols() << "\n";
+    std::cout << "Status: ";
     if(model.isProvenOptimal())
         std::cout << "optimal\n";
     else if(model.isProvenInfeasible())
@@ -83,9 +107,9 @@ void Solver::solveWithCbc() {
         std::cout << "reached time limit\n";
     else
         std::cout << "unknown\n";
-    std::cout << "number of nodes: " << model.getNodeCount() << "\n";
-    std::cout << "number of iterations: " << model.getIterationCount() << "\n";
-    std::cout << "objective value: " << model.getMinimizationObjValue() << "\n";
+    std::cout << "Number of nodes: " << model.getNodeCount() << "\n";
+    std::cout << "Number of iterations: " << model.getIterationCount() << "\n";
+    std::cout << "Objective value: " << model.getMinimizationObjValue() << "\n";
 
     const double * const sln = model.solver()->getColSolution();
     for(int i = 0; i < _numCols; ++i)
@@ -95,13 +119,10 @@ void Solver::solveWithCbc() {
     // for a constraint like ax >= b, use getRowActivity() to get ax.
 
     delete solver;
-#else
-    const std::string msg = "Cbc include paths and libs not provided Cannot use solveWithCbc().";
-    throw util::MSCPException(msg);
-#endif
 }
+#endif
 
-void Solver::printModelData() const {
+void Solver::printConstraints() const {
     std::cout << "rows\n";
     for (size_t i = 0; i < _rowIndices.size(); ++i) {
        std::cout << "row " << i << "\n";
