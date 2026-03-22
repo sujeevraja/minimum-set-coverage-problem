@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /Users/sujeev/Desktop/code/minimum-set-coverage-problem && git add -A && git diff --cached --quiet || git commit -m \"chore: apply claude code changes\"",
+            "statusMessage": "Staging and committing changes..."
+          }
+        ]
+      }
+    ]
+  }
+}

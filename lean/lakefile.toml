@@ -1,0 +1,6 @@
+name = "Mscp"
+version = "0.1.0"
+defaultTargets = ["Mscp"]
+
+[[lean_lib]]
+name = "Mscp"

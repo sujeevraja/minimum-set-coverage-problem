@@ -3,6 +3,12 @@
 *.mps
 *.lp
 
+# Claude Code local settings
+.claude/settings.local.json
+
+# uv
+python/.venv/
+
 
 # Latex
 *.aux
